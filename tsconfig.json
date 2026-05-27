@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "target": "esnext",
+    "types": ["node"],
+    "strict": true,
+    "verbatimModuleSyntax": true,
+		"outDir": "dist",
+    "rootDir": ".",
+		"declaration": true,
+		"skipLibCheck": true
+  }
+}
