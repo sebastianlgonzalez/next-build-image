@@ -34,11 +34,12 @@ export async function runOptimize(config: Config): Promise<void> {
   let totalSaved = 0;
 
   for (const file of files) {
+    const fileKey = file.replaceAll("\\", "/");
     const inputPath = path.join(absDir, file);
     const parsed = path.parse(file);
 
     const hash = hashFile(inputPath);
-    const existing = manifest[file];
+    const existing = manifest[fileKey];
 
     if (existing?.hash === hash) {
       log.dim(`  unchanged  ${file}`);
@@ -53,7 +54,6 @@ export async function runOptimize(config: Config): Promise<void> {
     }
 
     const aspectRatio = metadata.width / metadata.height;
-
     const sourceWidth = metadata.width;
     const eligibleWidths = widths.filter((w) => w <= sourceWidth);
     const outputs: string[] = [];
@@ -65,9 +65,10 @@ export async function runOptimize(config: Config): Promise<void> {
       await sharp(inputPath)[format]({ quality }).toFile(outFile);
       const outputSize = fs.statSync(outFile).size;
       totalSaved += inputSize - outputSize;
-      outputs.push(outFile);
+      const relOut = path.relative(process.cwd(), outFile).replaceAll("\\", "/");
+      outputs.push(relOut);
       log.success(`  ✓  ${file} → ${parsed.name}.${format}  (${formatBytes(inputSize)} → ${formatBytes(outputSize)})`);
-      manifest[file] = { hash, outputs, resized: false, aspectRatio }; // changed: added aspectRatio
+      manifest[fileKey] = { hash, outputs, resized: false, aspectRatio };
       processed++;
       continue;
     }
@@ -82,11 +83,12 @@ export async function runOptimize(config: Config): Promise<void> {
         .toFile(outFile);
       const outputSize = fs.statSync(outFile).size;
       totalSaved += inputSize - outputSize;
-      outputs.push(outFile);
+      const relOut = path.relative(process.cwd(), outFile).replaceAll("\\", "/");
+      outputs.push(relOut);
       log.success(`  ✓  ${file} → ${parsed.name}-${width}.${format}  (${formatBytes(inputSize)} → ${formatBytes(outputSize)})`);
     }
 
-    manifest[file] = { hash, outputs, aspectRatio }; // changed: added aspectRatio
+    manifest[fileKey] = { hash, outputs, aspectRatio };
     processed++;
   }
 
