@@ -55,8 +55,22 @@ export async function runOptimize(config: Config): Promise<void> {
 
     const aspectRatio = metadata.width / metadata.height;
     const sourceWidth = metadata.width;
-    const eligibleWidths = widths.filter((w) => w <= sourceWidth);
-    const outputs: string[] = [];
+
+    const eligibleWidths: number[] = [];
+    for (let i = 0; i < widths.length; i++) {
+      const w = widths[i];
+      const prev = widths[i - 1];
+      if (w <= sourceWidth) {
+        eligibleWidths.push(w);
+      } else if (prev !== undefined && sourceWidth > prev) {
+        eligibleWidths.push(w);
+        break;
+      } else {
+        break;
+      }
+    }
+
+		const outputs: string[] = [];
 
     if (eligibleWidths.length === 0) {
       const outFile = path.join(absOut, parsed.dir, `${parsed.name}.${format}`);
