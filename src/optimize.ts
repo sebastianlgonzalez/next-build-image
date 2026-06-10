@@ -47,8 +47,8 @@ export async function runOptimize(config: Config): Promise<void> {
       continue;
     }
 
-    const metadata = await sharp(inputPath).metadata();
-
+		const metadata = await sharp(inputPath).rotate().metadata();
+		
     if (!metadata.width || !metadata.height) {
       throw new Error(`Could not read dimensions for ${file}`);
     }
@@ -57,7 +57,7 @@ export async function runOptimize(config: Config): Promise<void> {
     const sourceWidth = metadata.width;
 
     const eligibleWidths: number[] = [];
-    for (let i = 0; i < widths.length; i++) {
+    for (let i = 0; i < widths.length; ++i) {
       const w = widths[i];
       const prev = widths[i - 1];
       if (w <= sourceWidth) {
@@ -70,18 +70,23 @@ export async function runOptimize(config: Config): Promise<void> {
       }
     }
 
+		const inputSize = fs.statSync(inputPath).size;
 		const outputs: string[] = [];
 
     if (eligibleWidths.length === 0) {
       const outFile = path.join(absOut, parsed.dir, `${parsed.name}.${format}`);
       fs.mkdirSync(path.dirname(outFile), { recursive: true });
-      const inputSize = fs.statSync(inputPath).size;
-      await sharp(inputPath)[format]({ quality }).toFile(outFile);
+
+      await sharp(inputPath).rotate()[format]({ quality }).toFile(outFile);
+
       const outputSize = fs.statSync(outFile).size;
       totalSaved += inputSize - outputSize;
+
       const relOut = path.relative(process.cwd(), outFile).replaceAll("\\", "/");
       outputs.push(relOut);
+
       log.success(`  ✓  ${file} → ${parsed.name}.${format}  (${formatBytes(inputSize)} → ${formatBytes(outputSize)})`);
+			
       manifest[fileKey] = { hash, outputs, resized: false, aspectRatio };
       processed++;
       continue;
@@ -90,15 +95,19 @@ export async function runOptimize(config: Config): Promise<void> {
     for (const width of eligibleWidths) {
       const outFile = path.join(absOut, parsed.dir, `${parsed.name}-${width}.${format}`);
       fs.mkdirSync(path.dirname(outFile), { recursive: true });
-      const inputSize = fs.statSync(inputPath).size;
+
       await sharp(inputPath)
+        .rotate()
         .resize({ width, withoutEnlargement: true })
         [format]({ quality })
         .toFile(outFile);
+
       const outputSize = fs.statSync(outFile).size;
       totalSaved += inputSize - outputSize;
+
       const relOut = path.relative(process.cwd(), outFile).replaceAll("\\", "/");
       outputs.push(relOut);
+
       log.success(`  ✓  ${file} → ${parsed.name}-${width}.${format}  (${formatBytes(inputSize)} → ${formatBytes(outputSize)})`);
     }
 
