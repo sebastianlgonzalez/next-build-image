@@ -34,10 +34,11 @@ export async function runOptimize(config: Config): Promise<void> {
   let totalSaved = 0;
 
   for (const file of files) {
-    const fileKey = file.replaceAll("\\", "/");
-    const inputPath = path.join(absDir, file);
-    const parsed = path.parse(file);
-
+		const parsed = path.parse(file);
+    const fileKey = path.join(parsed.dir, parsed.name + parsed.ext.toLowerCase()).replaceAll("\\", "/");
+    
+		const inputPath = path.join(absDir, file);
+    
     const hash = hashFile(inputPath);
     const existing = manifest[fileKey];
 
